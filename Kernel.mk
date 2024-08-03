@@ -31,6 +31,7 @@ OBJS		:=	src/config.o \
 			src/soundfontmanager.o \
 			src/synth/mt32synth.o \
 			src/synth/soundfontsynth.o \
+			src/synth/sc55synth.o \
 			src/zoneallocator.o
 
 EXTRACLEAN	+=	src/*.d src/*.o \
@@ -83,6 +84,9 @@ EXTRALIBS	+=	$(MT32EMULIB)
 INCLUDE		+=	-I $(FLUIDSYNTHBUILDDIR)/include \
 			-I $(FLUIDSYNTHHOME)/include
 EXTRALIBS	+=	$(FLUIDSYNTHLIB)
+
+INCLUDE		+=	-I $(NUKED_SC55HOME)/src
+EXTRALIBS	+=	$(NUKED_SC55LIB)
 
 #
 # Generate version string from git tag

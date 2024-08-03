@@ -119,7 +119,8 @@ CMT32Pi::CMT32Pi(CI2CMaster* pI2CMaster, CSPIMaster* pSPIMaster, CInterruptSyste
 	  m_nMasterVolume(100),
 	  m_pCurrentSynth(nullptr),
 	  m_pMT32Synth(nullptr),
-	  m_pSoundFontSynth(nullptr)
+	  m_pSoundFontSynth(nullptr),
+	  m_pSC55Synth(nullptr)
 {
 	s_pThis = this;
 }
@@ -269,17 +270,25 @@ bool CMT32Pi::Initialize(bool bSerialMIDIAvailable)
 		m_pControl = nullptr;
 	}
 
-	LCDLog(TLCDLogType::Startup, "Init mt32emu");
-	InitMT32Synth();
+	//LCDLog(TLCDLogType::Startup, "Init mt32emu");
+	//InitMT32Synth();
 
-	LCDLog(TLCDLogType::Startup, "Init FluidSynth");
-	InitSoundFontSynth();
+	//LCDLog(TLCDLogType::Startup, "Init FluidSynth");
+	//InitSoundFontSynth();
 
+	LCDLog(TLCDLogType::Startup, "Init Nuked-SC55");
+	InitSC55Synth();
+	LCDLog(TLCDLogType::Startup, "Init Nuked-SC55: done");
+
+#if 1
+	m_pCurrentSynth = m_pSC55Synth;
+#else
 	// Set initial synthesizer
 	if (m_pConfig->SystemDefaultSynth == CConfig::TSystemDefaultSynth::MT32)
 		m_pCurrentSynth = m_pMT32Synth;
 	else if (m_pConfig->SystemDefaultSynth == CConfig::TSystemDefaultSynth::SoundFont)
 		m_pCurrentSynth = m_pSoundFontSynth;
+#endif
 
 	if (!m_pCurrentSynth)
 	{
@@ -290,6 +299,8 @@ bool CMT32Pi::Initialize(bool bSerialMIDIAvailable)
 			m_pCurrentSynth = m_pMT32Synth;
 		else if (m_pSoundFontSynth)
 			m_pCurrentSynth = m_pSoundFontSynth;
+		else if (m_pSC55Synth)
+			m_pCurrentSynth = m_pSC55Synth;
 		else
 		{
 			LOGPANIC("No synths available; ROMs/SoundFonts not found");
@@ -406,6 +417,23 @@ bool CMT32Pi::InitSoundFontSynth()
 	}
 
 	m_pSoundFontSynth->SetUserInterface(&m_UserInterface);
+
+	return true;
+}
+
+bool CMT32Pi::InitSC55Synth()
+{
+	assert(m_pSC55Synth == nullptr);
+
+	m_pSC55Synth = new CSC55Synth(m_pConfig->AudioSampleRate);
+	if (!m_pSC55Synth->Initialize())
+	{
+		LOGWARN("Nuked-SC55 init failed; no ROMs present?");
+		LCDLog(TLCDLogType::Startup, "Nuked-SC55 init failed; no ROMs present?");
+		delete m_pSC55Synth;
+		m_pSC55Synth = nullptr;
+		return false;
+	}
 
 	return true;
 }

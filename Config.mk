@@ -95,4 +95,8 @@ FLUIDSYNTHHOME=$(realpath external/fluidsynth)
 FLUIDSYNTHBUILDDIR=build-fluidsynth
 FLUIDSYNTHLIB=$(FLUIDSYNTHBUILDDIR)/src/libfluidsynth.a
 
+NUKED_SC55HOME=$(realpath external/Nuked-SC55)
+NUKED_SC55BUILDDIR=build-nuked-sc55
+NUKED_SC55LIB=$(NUKED_SC55BUILDDIR)/libnuked-sc55.a
+
 INIHHOME=$(realpath external/inih)

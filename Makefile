@@ -5,7 +5,7 @@
 include Config.mk
 
 .DEFAULT_GOAL=all
-.PHONY: submodules circle-stdlib mt32emu fluidsynth all clean veryclean
+.PHONY: submodules circle-stdlib mt32emu fluidsynth nuked-sc55 all clean veryclean
 
 #
 # Functions to apply/reverse patches only if not completely applied/reversed already
@@ -133,9 +133,26 @@ $(FLUIDSYNTHBUILDDIR)/.done: $(CIRCLESTDLIBHOME)/.done
 	@touch $@
 
 #
+# Build Nuked-SC55
+#
+nuked-sc55: $(NUKED_SC55BUILDDIR)/.done
+
+$(NUKED_SC55BUILDDIR)/.done: $(CIRCLESTDLIBHOME)/.done
+	@CFLAGS="$(CFLAGS_EXTERNAL)" \
+	CXXFLAGS="$(CFLAGS_EXTERNAL)" \
+	cmake -B $(NUKED_SC55BUILDDIR) \
+		 $(CMAKE_TOOLCHAIN_FLAGS) \
+		 -DCMAKE_CXX_FLAGS_RELEASE="-Ofast" \
+		 -DCMAKE_BUILD_TYPE=Release \
+		 $(NUKED_SC55HOME) \
+		 >/dev/null
+	@cmake --build $(NUKED_SC55BUILDDIR)
+	@touch $@
+
+#
 # Build kernel itself
 #
-all: circle-stdlib mt32emu fluidsynth
+all: circle-stdlib mt32emu fluidsynth nuked-sc55
 	@$(MAKE) -f Kernel.mk $(KERNEL).img $(KERNEL).hex
 
 #

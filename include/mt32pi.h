@@ -62,9 +62,10 @@
 #include "synth/mt32romset.h"
 #include "synth/mt32synth.h"
 #include "synth/soundfontsynth.h"
+#include "synth/sc55synth.h"
 #include "synth/synth.h"
 
-//#define MONITOR_TEMPERATURE
+#define MONITOR_TEMPERATURE
 
 class CMT32Pi : CMultiCoreSupport, CPower, CMIDIParser, CAppleMIDIHandler, CUDPMIDIHandler
 {
@@ -112,6 +113,7 @@ private:
 	bool InitNetwork();
 	bool InitMT32Synth();
 	bool InitSoundFontSynth();
+	bool InitSC55Synth();
 
 	// Tasks for specific CPU cores
 	void MainTask();
@@ -212,6 +214,7 @@ private:
 	CSynthBase* m_pCurrentSynth;
 	CMT32Synth* m_pMT32Synth;
 	CSoundFontSynth* m_pSoundFontSynth;
+	CSC55Synth* m_pSC55Synth;
 
 	// MIDI receive buffer
 	CRingBuffer<u8, MIDIRxBufferSize> m_MIDIRxBuffer;
