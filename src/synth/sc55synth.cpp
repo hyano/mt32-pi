@@ -206,10 +206,7 @@ bool CSC55Synth::Initialize()
 		romimage.image[j].size = 0;
 	}
 
-	for (int i = 0; i < SC55_SampleFreq() * 3; i++)
-	{
-		SC55_Update(interp_prev_sample);
-	}
+	SC55_Update(interp_prev_sample);
 
 	if (!good)
 	{
@@ -225,14 +222,14 @@ void CSC55Synth::HandleMIDIShortMessage(u32 nMessage)
 
 	last_msg = msg;
 
-	m_Lock.Acquire();
-	SC55_Write((u8)msg);
+	//m_Lock.Acquire();
+	SC55_Write(msg & 0xff);
 	switch (msg & 0xf0)
 	{
 		case 0xc0:
 		case 0xd0:
 			msg >>= 8;
-			SC55_Write((u8)msg);
+			SC55_Write(msg & 0xff);
 			break;
 		case 0x80:
 		case 0x90:
@@ -240,14 +237,14 @@ void CSC55Synth::HandleMIDIShortMessage(u32 nMessage)
 		case 0xb0:
 		case 0xe0:
 			msg >>= 8;
-			SC55_Write((u8)msg);
+			SC55_Write(msg & 0xff);
 			msg >>= 8;
-			SC55_Write((u8)msg);
+			SC55_Write(msg & 0xff);
 			break;
 		case 0xf0:
 			break;
 	}
-	m_Lock.Release();
+	//m_Lock.Release();
 
 	// Update MIDI monitor
 	CSynthBase::HandleMIDIShortMessage(nMessage);
@@ -255,12 +252,12 @@ void CSC55Synth::HandleMIDIShortMessage(u32 nMessage)
 
 void CSC55Synth::HandleMIDISysExMessage(const u8* pData, size_t nSize)
 {
-	m_Lock.Acquire();
+	//m_Lock.Acquire();
 	for (size_t i = 0; i < nSize; i++)
 	{
 		SC55_Write(*pData++);
 	}
-	m_Lock.Release();
+	//m_Lock.Release();
 }
 
 bool CSC55Synth::IsActive()
@@ -294,7 +291,7 @@ size_t CSC55Synth::Render(s16* pOutBuffer, size_t nFrames)
 			interp_pos -= INTERP_SIZE;
 		}
 		interp_pos += interp_ratio;
-#if 1
+#if 0
 		*buff++ = ((int)interp_prev_sample[0] * (INTERP_SIZE - interp_pos)
 				   + (int)interp_cur_sample[0] * (interp_pos)) / INTERP_SIZE;
 		*buff++ = ((int)interp_prev_sample[1] * (INTERP_SIZE - interp_pos)
@@ -325,7 +322,7 @@ size_t CSC55Synth::Render(float* pOutBuffer, size_t nFrames)
 			interp_pos -= INTERP_SIZE;
 		}
 		interp_pos += interp_ratio;
-#if 1
+#if 0
 		int s;
 		s = ((int)interp_prev_sample[0] * (INTERP_SIZE - interp_pos)
 				   + (int)interp_cur_sample[0] * (interp_pos)) / INTERP_SIZE;
