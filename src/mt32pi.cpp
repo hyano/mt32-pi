@@ -429,7 +429,6 @@ bool CMT32Pi::InitSC55Synth()
 	if (!m_pSC55Synth->Initialize())
 	{
 		LOGWARN("Nuked-SC55 init failed; no ROMs present?");
-		LCDLog(TLCDLogType::Startup, "Nuked-SC55 init failed; no ROMs present?");
 		delete m_pSC55Synth;
 		m_pSC55Synth = nullptr;
 		return false;
