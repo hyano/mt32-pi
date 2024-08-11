@@ -195,7 +195,9 @@ bool CSC55Synth::Initialize()
 	memset(interp_prev_sample, 0, sizeof(interp_prev_sample));
 	memset(interp_cur_sample, 0, sizeof(interp_cur_sample));
 	interp_pos = INTERP_SIZE;
-	interp_ratio = SC55_SampleFreq() * INTERP_SIZE / m_nSampleRate;
+	interp_ratio = SC55_SampleFreq() / 1 * INTERP_SIZE / m_nSampleRate;
+
+	memset(lcd_buffer_prev, 0, sizeof(lcd_buffer_prev));
 
 	for (int j = 0; j < ROM_SET_N_FILES; j++)
 	{
@@ -346,6 +348,7 @@ void CSC55Synth::ReportStatus() const
 
 void CSC55Synth::UpdateLCD(CLCD& LCD, unsigned int nTicks)
 {
+#if 0
 	const u8 nHeight = LCD.Height();
 	float ChannelLevels[16], PeakLevels[16];
 	u8 nStatusRow, nBarHeight;
@@ -371,4 +374,33 @@ void CSC55Synth::UpdateLCD(CLCD& LCD, unsigned int nTicks)
 	CString s;
 	s.Format("%d:%08x", romset, last_msg);
 	LCD.Print(s, 0, nStatusRow, true, false);
+#endif
+
+	SC55_LCD_Update();
+
+#if 1
+	uint8_t *lcd_buffer = SC55_LCD_Buffer();
+
+	for (int y = 0; y < 64; y++)
+	{
+		for (int x = 0; x < 128; x++)
+		{
+			int32_t idx = y * 128 + x;
+			uint8_t p = lcd_buffer[idx];
+			if (true || lcd_buffer_prev[idx] != p)
+			{
+				if (p)
+				{
+					LCD.SetPixel(x, y);
+				}
+				else
+				{
+					LCD.ClearPixel(x, y);
+				}
+				lcd_buffer_prev[idx] = p;
+			}
+		}
+	}
+#endif
+
 }

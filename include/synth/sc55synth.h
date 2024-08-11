@@ -54,6 +54,8 @@ private:
 	unsigned int interp_pos;
 	unsigned int interp_ratio;
 
+	uint8_t lcd_buffer_prev[128*64];
+
 	int romset;
 	u32 last_msg;
 };

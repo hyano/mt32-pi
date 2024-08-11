@@ -487,7 +487,7 @@ void CMT32Pi::MainTask()
 		{
 			const unsigned int nTemp = CCPUThrottle::Get()->GetTemperature();
 			LOGDBG("Temperature: %dC", nTemp);
-			LCDLog(TLCDLogType::Notice, "Temp: %dC", nTemp);
+			//LCDLog(TLCDLogType::Notice, "Temp: %dC", nTemp);
 			m_nTempUpdateTime = nTicks;
 		}
 #endif
