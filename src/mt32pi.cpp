@@ -597,7 +597,6 @@ void CMT32Pi::AudioTask()
 
 	// Extra byte so that we can write to the 24-bit buffer with overlapping 32-bit writes (efficiency)
 	float FloatBuffer[nQueueSizeFrames * nChannels];
-	s16 ShortBuffer[nQueueSizeFrames * nChannels];
 	s8 IntBuffer[nQueueSizeFrames * nBytesPerFrame + (bI2S ? 0 : 1)];
 
 	while (m_bRunning)
@@ -605,8 +604,7 @@ void CMT32Pi::AudioTask()
 		const size_t nFrames = nQueueSizeFrames - m_pSound->GetQueueFramesAvail();
 		const size_t nWriteBytes = nFrames * nBytesPerFrame;
 
-		//m_pCurrentSynth->Render(FloatBuffer, nFrames);
-		m_pCurrentSynth->Render(ShortBuffer, nFrames);
+		m_pCurrentSynth->Render(FloatBuffer, nFrames);
 
 		if (bReversedStereo)
 		{
@@ -621,23 +619,12 @@ void CMT32Pi::AudioTask()
 		}
 		else
 		{
-#if 0
 			// Convert to signed 24-bit integers
 			for (size_t i = 0; i < nFrames * nChannels; ++i)
 			{
 				s32* const pSample = reinterpret_cast<s32*>(IntBuffer + i * nBytesPerSample);
 				*pSample = FloatBuffer[i] * Sample24BitMax;
 			}
-#else
-			s16* pShortSample = ShortBuffer;
-			s32* pSample = reinterpret_cast<s32*>(IntBuffer);
-			const int div = 8388607 / 32768;
-			for (size_t i = 0; i < nFrames; ++i)
-			{
-				*pSample++ = *pShortSample++ * div;
-				*pSample++ = *pShortSample++ * div;
-			}
-#endif
 		}
 
 		const int nResult = m_pSound->Write(IntBuffer, nWriteBytes);
