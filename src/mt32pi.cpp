@@ -40,7 +40,7 @@ const char MT32PiFullName[] = MT32_PI_NAME " " MT32_PI_VERSION;
 const char WLANFirmwarePath[] = "SD:firmware/";
 const char WLANConfigFile[]   = "SD:wpa_supplicant.conf";
 
-constexpr u32 LCDUpdatePeriodMillis                = 16;
+constexpr u32 LCDUpdatePeriodMillis                = 8;
 constexpr u32 MisterUpdatePeriodMillis             = 50;
 constexpr u32 LEDTimeoutMillis                     = 50;
 constexpr u32 ActiveSenseTimeoutMillis             = 330;
@@ -595,7 +595,7 @@ void CMT32Pi::AudioTask()
 	const size_t nQueueSizeFrames = m_pSound->GetQueueSizeFrames();
 
 	// Extra byte so that we can write to the 24-bit buffer with overlapping 32-bit writes (efficiency)
-	float FloatBuffer[nQueueSizeFrames * nChannels];
+	s16 ShortBuffer[nQueueSizeFrames * nChannels];
 	s8 IntBuffer[nQueueSizeFrames * nBytesPerFrame + (bI2S ? 0 : 1)];
 
 	while (m_bRunning)
@@ -603,17 +603,20 @@ void CMT32Pi::AudioTask()
 		const size_t nFrames = nQueueSizeFrames - m_pSound->GetQueueFramesAvail();
 		const size_t nWriteBytes = nFrames * nBytesPerFrame;
 
-		m_pCurrentSynth->Render(FloatBuffer, nFrames);
+		m_pCurrentSynth->Render(ShortBuffer, nFrames);
 
+		s8 *Buffer = IntBuffer;
 		if (bReversedStereo)
 		{
 			// Convert to signed 24-bit integers with channel swap
 			for (size_t i = 0; i < nFrames * nChannels; i += nChannels)
 			{
-				s32* const pLeftSample = reinterpret_cast<s32*>(IntBuffer + i * nBytesPerSample);
-				s32* const pRightSample = reinterpret_cast<s32*>(IntBuffer + (i + 1) * nBytesPerSample);
-				*pLeftSample = FloatBuffer[i + 1] * Sample24BitMax;
-				*pRightSample = FloatBuffer[i] * Sample24BitMax;
+				s32* const pLeftSample = reinterpret_cast<s32*>(Buffer);
+				Buffer += nBytesPerSample;
+				s32* const pRightSample = reinterpret_cast<s32*>(Buffer);
+				Buffer += nBytesPerSample;
+				*pLeftSample = ShortBuffer[i + 1] * 256;
+				*pRightSample = ShortBuffer[i] * 256;
 			}
 		}
 		else
@@ -621,8 +624,9 @@ void CMT32Pi::AudioTask()
 			// Convert to signed 24-bit integers
 			for (size_t i = 0; i < nFrames * nChannels; ++i)
 			{
-				s32* const pSample = reinterpret_cast<s32*>(IntBuffer + i * nBytesPerSample);
-				*pSample = FloatBuffer[i] * Sample24BitMax;
+				s32* const pSample = reinterpret_cast<s32*>(Buffer);
+				*pSample = ShortBuffer[i] * 256;
+				Buffer += nBytesPerSample;
 			}
 		}
 
