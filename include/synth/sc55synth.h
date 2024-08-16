@@ -49,10 +49,11 @@ public:
 	virtual void UpdateLCD(CLCD& LCD, unsigned int nTicks) override;
 
 private:
-	short interp_prev_sample[2];
-	short interp_cur_sample[2];
-	unsigned int interp_pos;
-	unsigned int interp_ratio;
+	s16 m_sample[2];
+	int32_t m_pos;
+	int32_t m_step;
+	int32_t m_wav_pos;
+	static const int32_t m_wav_step = 0x10000;
 
 	uint8_t lcd_buffer_prev[128*64];
 

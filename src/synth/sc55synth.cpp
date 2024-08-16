@@ -103,10 +103,6 @@ static const char* roms[ROM_SET_COUNT][ROM_SET_N_FILES] =
 };
 
 
-#define INTERP_SHIFT	(14)
-#define INTERP_SIZE		(1 << INTERP_SHIFT)
-
-
 CSC55Synth::CSC55Synth(unsigned nSampleRate)
 	: CSynthBase(nSampleRate)
 {
@@ -192,10 +188,15 @@ bool CSC55Synth::Initialize()
 		SC55_Open(&romimage);
 	}
 
-	memset(interp_prev_sample, 0, sizeof(interp_prev_sample));
-	memset(interp_cur_sample, 0, sizeof(interp_cur_sample));
-	interp_pos = INTERP_SIZE;
-	interp_ratio = SC55_SampleFreq() / 1 * INTERP_SIZE / m_nSampleRate;
+	memset(m_sample, 0, sizeof(m_sample));
+	m_step = (int32_t)(int64_t(m_wav_step) * m_nSampleRate / (SC55_SampleFreq() / 2));
+	m_pos = 0;
+	m_wav_pos = 0;
+	LOGDBG("SC55    Freq: %d", SC55_SampleFreq());
+	LOGDBG("mt32-pi Freq: %d", m_nSampleRate);
+	LOGDBG("m_wav_step  : %d", m_wav_step);
+	LOGDBG("m_step      : %d", m_step);
+
 
 	memset(lcd_buffer_prev, 0, sizeof(lcd_buffer_prev));
 
@@ -208,7 +209,7 @@ bool CSC55Synth::Initialize()
 		romimage.image[j].size = 0;
 	}
 
-	SC55_Update(interp_prev_sample);
+	SC55_Update(m_sample);
 
 	if (!good)
 	{
@@ -285,23 +286,32 @@ size_t CSC55Synth::Render(s16* pOutBuffer, size_t nFrames)
 	m_Lock.Acquire();
 	while (samples--)
 	{
-		while (interp_pos >= INTERP_SIZE)
+		int32_t period;
+		int32_t diff;
+		int32_t out[2];
+
+		period = m_pos - m_wav_pos;
+		period = period < m_wav_step ? period : m_wav_step;
+		out[0] = m_sample[0] * period;
+		out[1] = m_sample[1] * period;
+
+		m_wav_pos += m_wav_step;
+		diff = m_wav_pos - m_pos;
+
+		while (diff > 0)
 		{
-			interp_prev_sample[0] = interp_cur_sample[0];
-			interp_prev_sample[1] = interp_cur_sample[1];
-			SC55_Update(interp_cur_sample);
-			interp_pos -= INTERP_SIZE;
+			SC55_Update(m_sample);
+
+			period = diff < m_step ? diff : m_step;
+			out[0] = m_sample[0] * period;
+			out[1] = m_sample[1] * period;
+
+			m_pos += m_step;
+			diff -= m_step;
 		}
-		interp_pos += interp_ratio;
-#if 0
-		*buff++ = ((int)interp_prev_sample[0] * (INTERP_SIZE - interp_pos)
-				   + (int)interp_cur_sample[0] * (interp_pos)) / INTERP_SIZE;
-		*buff++ = ((int)interp_prev_sample[1] * (INTERP_SIZE - interp_pos)
-				   + (int)interp_cur_sample[1] * (interp_pos)) / INTERP_SIZE;
-#else
-		*buff++ = interp_cur_sample[0];
-		*buff++ = interp_cur_sample[1];
-#endif
+
+		*buff++ = out[0] / m_wav_step;
+		*buff++ = out[1] / m_wav_step;
 	}
 	m_Lock.Release();
 
@@ -316,26 +326,32 @@ size_t CSC55Synth::Render(float* pOutBuffer, size_t nFrames)
 	m_Lock.Acquire();
 	while (samples--)
 	{
-		while (interp_pos >= INTERP_SIZE)
+		int32_t period;
+		int32_t diff;
+		int32_t out[2];
+
+		period = m_pos - m_wav_pos;
+		period = period < m_wav_step ? period : m_wav_step;
+		out[0] = m_sample[0] * period;
+		out[1] = m_sample[1] * period;
+
+		m_wav_pos += m_wav_step;
+		diff = m_wav_pos - m_pos;
+
+		while (diff > 0)
 		{
-			interp_prev_sample[0] = interp_cur_sample[0];
-			interp_prev_sample[1] = interp_cur_sample[1];
-			SC55_Update(interp_cur_sample);
-			interp_pos -= INTERP_SIZE;
+			SC55_Update(m_sample);
+
+			period = diff < m_step ? diff : m_step;
+			out[0] = m_sample[0] * period;
+			out[1] = m_sample[1] * period;
+
+			m_pos += m_step;
+			diff -= m_step;
 		}
-		interp_pos += interp_ratio;
-#if 0
-		int s;
-		s = ((int)interp_prev_sample[0] * (INTERP_SIZE - interp_pos)
-				   + (int)interp_cur_sample[0] * (interp_pos)) / INTERP_SIZE;
-		*buff++ = (float)s / 32768.0f;
-		s = ((int)interp_prev_sample[1] * (INTERP_SIZE - interp_pos)
-				   + (int)interp_cur_sample[1] * (interp_pos)) / INTERP_SIZE;
-		*buff++ = (float)s / 32768.0f;
-#else
-		*buff++ = (float)interp_cur_sample[0] / 32768.0f;
-		*buff++ = (float)interp_cur_sample[1] / 32768.0f;
-#endif
+
+		*buff++ = (float)out[0] / m_wav_step / 32768.f;
+		*buff++ = (float)out[1] / m_wav_step / 32768.f;
 	}
 	m_Lock.Release();
 
