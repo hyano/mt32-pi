@@ -65,7 +65,7 @@
 #include "synth/sc55synth.h"
 #include "synth/synth.h"
 
-#define MONITOR_TEMPERATURE
+//#define MONITOR_TEMPERATURE
 
 class CMT32Pi : CMultiCoreSupport, CPower, CMIDIParser, CAppleMIDIHandler, CUDPMIDIHandler
 {
