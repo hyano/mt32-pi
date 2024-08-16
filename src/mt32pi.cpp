@@ -598,12 +598,38 @@ void CMT32Pi::AudioTask()
 	float FloatBuffer[nQueueSizeFrames * nChannels];
 	s8 IntBuffer[nQueueSizeFrames * nBytesPerFrame + (bI2S ? 0 : 1)];
 
+	LOGDBG("bI2S: %d", bI2S);
+	LOGDBG("bReversedStereo: %d", bReversedStereo);
+	LOGDBG("nBytesPerSample: %d", nBytesPerSample);
+	LOGDBG("nBytesPerFrame: %d", nBytesPerFrame);
+	LOGDBG("nQueueSizeFrames: %d", nQueueSizeFrames);
+
 	while (m_bRunning)
 	{
 		const size_t nFrames = nQueueSizeFrames - m_pSound->GetQueueFramesAvail();
 		const size_t nWriteBytes = nFrames * nBytesPerFrame;
 
+		const unsigned int nTicks = m_pTimer->GetTicks();
+		static unsigned int update_time = 0;
+		static unsigned int zero_count = 0;
+		static unsigned int non_zero_count = 0;
+		static unsigned int render_tick = 0;
+		static unsigned int max_render_tick = 0;
+		static unsigned int total_render_tick = 0;
+		unsigned int tick_start;
+		if (nFrames)
+			non_zero_count++;
+		else
+			zero_count++;
+		if (nFrames == 0)
+			continue;
+
+		tick_start = m_pTimer->GetClockTicks();
 		m_pCurrentSynth->Render(FloatBuffer, nFrames);
+		render_tick = m_pTimer->GetClockTicks() - tick_start;
+		total_render_tick += render_tick;
+		if (render_tick > max_render_tick)
+			max_render_tick = render_tick;
 
 		if (bReversedStereo)
 		{
@@ -629,6 +655,20 @@ void CMT32Pi::AudioTask()
 		const int nResult = m_pSound->Write(IntBuffer, nWriteBytes);
 		if (nResult != static_cast<int>(nWriteBytes))
 			LOGERR("Sound data dropped");
+
+		if (false && nTicks - update_time >= MSEC2HZ(10000))
+		{
+			update_time = nTicks;
+			LOGDBG("Zero: %d, Non-zero: %d", zero_count, non_zero_count);
+			LOGDBG("nFrames: %d", nFrames);
+			LOGDBG("nWriteBytes: %d", nWriteBytes);
+			LOGDBG("Render Tick: %d", max_render_tick);
+			LOGDBG("Total Render Tick: %d (Ave: %d)", total_render_tick, total_render_tick / (non_zero_count != 0 ? non_zero_count : 1));
+			zero_count = non_zero_count = 0;
+			max_render_tick = 0;
+			total_render_tick = 0;
+		}
+
 	}
 }
 
