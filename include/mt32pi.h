@@ -50,6 +50,7 @@
 #include "config.h"
 #include "control/control.h"
 #include "control/mister.h"
+#include "delayqueue.h"
 #include "event.h"
 #include "lcd/ui.h"
 #include "midiparser.h"
@@ -88,6 +89,7 @@ private:
 	};
 
 	static constexpr size_t MIDIRxBufferSize = 2048;
+	static constexpr size_t MIDIDelayQueueSize = 65536;
 
 	// CPower
 	virtual void OnEnterPowerSavingMode() override;
@@ -125,6 +127,7 @@ private:
 	void UpdateMIDI();
 	void PurgeMIDIBuffers();
 	size_t ReceiveSerialMIDI(u8* pOutData, size_t nSize);
+	void ReplaySerialMIDI(u8* pOutData, size_t nSize);
 	bool ParseCustomSysEx(const u8* pData, size_t nSize);
 
 	void ProcessEventQueue();
@@ -218,6 +221,7 @@ private:
 
 	// MIDI receive buffer
 	CRingBuffer<u8, MIDIRxBufferSize> m_MIDIRxBuffer;
+	CDelayQueue<u8, MIDIDelayQueueSize> m_MIDIDelayQueue;
 
 	// Event handling
 	TEventQueue m_EventQueue;
