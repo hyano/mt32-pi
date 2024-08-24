@@ -180,3 +180,6 @@ mrproper: clean
 
 # Clean FluidSynth
 	@$(RM) -r $(FLUIDSYNTHBUILDDIR)
+
+# Clean Nuked-SC55
+	@$(RM) -r $(NUKED_SC55BUILDDIR)
