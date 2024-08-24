@@ -269,6 +269,11 @@ bool CMT32Pi::Initialize(bool bSerialMIDIAvailable)
 		m_pControl = nullptr;
 	}
 
+	if (m_pConfig->MIDIDelay)
+	{
+		m_MIDIDelayQueue.Initialize();
+	}
+
 	LCDLog(TLCDLogType::Startup, "Init mt32emu");
 	InitMT32Synth();
 
@@ -914,6 +919,7 @@ void CMT32Pi::UpdateMIDI()
 {
 	size_t nBytes;
 	u8 Buffer[MIDIRxBufferSize];
+	s32 delay = m_pConfig->MIDIDelay;
 
 	// Read MIDI messages from serial device or ring buffer
 	if (m_bSerialMIDIEnabled)
@@ -926,8 +932,35 @@ void CMT32Pi::UpdateMIDI()
 	else
 		nBytes = m_MIDIRxBuffer.Dequeue(Buffer, sizeof(Buffer));
 
+	// MIDI messages delay
+	if (delay > 0)
+	{
+		u32 tick =  CTimer::GetClockTicks();
+
+		// Enqueue
+		for (size_t i = 0; i < nBytes; i++)
+		{
+			m_MIDIDelayQueue.Enqueue(tick + delay, Buffer[i]);
+		}
+
+		// Dequeue
+		for (nBytes = 0; nBytes < MIDIRxBufferSize; nBytes++)
+		{
+			if (m_MIDIDelayQueue.IsEmpty())
+				break;
+
+			s32 diff = m_MIDIDelayQueue.Peek() - tick;
+			if (diff >= 0) break;
+
+			Buffer[nBytes] = m_MIDIDelayQueue.Dequeue();
+		}
+	}
+
 	if (nBytes == 0)
 		return;
+
+	// Replay MIDI messages via the serial port
+	ReplaySerialMIDI(Buffer, nBytes);
 
 	// Process MIDI messages
 	ParseMIDIBytes(Buffer, nBytes);
@@ -993,18 +1026,21 @@ size_t CMT32Pi::ReceiveSerialMIDI(u8* pOutData, size_t nSize)
 		return 0;
 	}
 
+	return static_cast<size_t>(nResult);
+}
+
+void CMT32Pi::ReplaySerialMIDI(u8* pOutData, size_t nSize)
+{
 	// Replay received MIDI data out via the serial port ('software thru')
 	if (m_pConfig->MIDIGPIOThru)
 	{
-		int nSendResult = m_pSerial->Write(pOutData, nResult);
-		if (nSendResult != nResult)
+		int nSendResult = m_pSerial->Write(pOutData, nSize);
+		if (static_cast<size_t>(nSendResult) != nSize)
 		{
-			LOGERR("received %d bytes, but only sent %d bytes", nResult, nSendResult);
+			LOGERR("received %d bytes, but only sent %d bytes", nSize, nSendResult);
 			LCDLog(TLCDLogType::Error, "UART TX error!");
 		}
 	}
-
-	return static_cast<size_t>(nResult);
 }
 
 void CMT32Pi::ProcessEventQueue()
