@@ -189,7 +189,7 @@ bool CSC55Synth::Initialize()
 	}
 
 	memset(m_sample, 0, sizeof(m_sample));
-	m_step = (int32_t)(int64_t(m_wav_step) * m_nSampleRate / (SC55_SampleFreq() / 2));
+	m_step = (int32_t)(int64_t(m_wav_step) * m_nSampleRate / (SC55_SampleFreq()));
 	m_pos = 0;
 	m_wav_pos = 0;
 	LOGDBG("SC55    Freq: %d", SC55_SampleFreq());
