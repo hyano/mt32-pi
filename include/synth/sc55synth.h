@@ -59,6 +59,8 @@ private:
 
 	int romset;
 	u32 last_msg;
+
+	uint8_t m_volume;
 };
 
 #endif

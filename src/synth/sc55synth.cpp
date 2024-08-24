@@ -104,7 +104,7 @@ static const char* roms[ROM_SET_COUNT][ROM_SET_N_FILES] =
 
 
 CSC55Synth::CSC55Synth(unsigned nSampleRate)
-	: CSynthBase(nSampleRate)
+	: CSynthBase(nSampleRate), m_volume(100)
 {
 }
 
@@ -141,7 +141,8 @@ bool CSC55Synth::Initialize()
 
 	memset(&romimage, 0, sizeof(SC55_RomImage_t));
 
-	for (int i = 0; i < ROM_SET_COUNT; i++)
+	//for (int i = 0; i < ROM_SET_COUNT; i++)
+	for (int i = ROM_SET_MK1; i < ROM_SET_MK1 + 1; i++)
 	{
 		good = true;
 		for (int j = 0; j < ROM_SET_N_FILES; j++)
@@ -276,6 +277,7 @@ void CSC55Synth::AllSoundOff()
 
 void CSC55Synth::SetMasterVolume(u8 nVolume)
 {
+	m_volume = nVolume;
 }
 
 size_t CSC55Synth::Render(s16* pOutBuffer, size_t nFrames)
@@ -310,8 +312,8 @@ size_t CSC55Synth::Render(s16* pOutBuffer, size_t nFrames)
 			diff -= m_step;
 		}
 
-		*buff++ = out[0] / m_wav_step;
-		*buff++ = out[1] / m_wav_step;
+		*buff++ = out[0] / m_wav_step * m_volume / 100;
+		*buff++ = out[1] / m_wav_step * m_volume / 100;
 	}
 	m_Lock.Release();
 
@@ -350,8 +352,8 @@ size_t CSC55Synth::Render(float* pOutBuffer, size_t nFrames)
 			diff -= m_step;
 		}
 
-		*buff++ = (float)out[0] / m_wav_step / 32768.f;
-		*buff++ = (float)out[1] / m_wav_step / 32768.f;
+		*buff++ = (float)out[0] / m_wav_step / 32768.f * m_volume / 100.f;
+		*buff++ = (float)out[1] / m_wav_step / 32768.f * m_volume / 100.f;
 	}
 	m_Lock.Release();
 

@@ -270,24 +270,24 @@ bool CMT32Pi::Initialize(bool bSerialMIDIAvailable)
 		m_pControl = nullptr;
 	}
 
-	//LCDLog(TLCDLogType::Startup, "Init mt32emu");
-	//InitMT32Synth();
+	LCDLog(TLCDLogType::Startup, "Init mt32emu");
+	InitMT32Synth();
 
 	//LCDLog(TLCDLogType::Startup, "Init FluidSynth");
 	//InitSoundFontSynth();
 
 	LCDLog(TLCDLogType::Startup, "Init Nuked-SC55");
 	InitSC55Synth();
-	LCDLog(TLCDLogType::Startup, "Init Nuked-SC55: done");
 
-#if 1
+#if 0
 	m_pCurrentSynth = m_pSC55Synth;
 #else
 	// Set initial synthesizer
 	if (m_pConfig->SystemDefaultSynth == CConfig::TSystemDefaultSynth::MT32)
 		m_pCurrentSynth = m_pMT32Synth;
 	else if (m_pConfig->SystemDefaultSynth == CConfig::TSystemDefaultSynth::SoundFont)
-		m_pCurrentSynth = m_pSoundFontSynth;
+		//m_pCurrentSynth = m_pSoundFontSynth;
+		m_pCurrentSynth = m_pSC55Synth;
 #endif
 
 	if (!m_pCurrentSynth)
@@ -831,7 +831,8 @@ void CMT32Pi::UpdateUSB(bool bStartup)
 				if (m_pSoundFontSynth)
 					m_pSoundFontSynth->GetSoundFontManager().ScanSoundFonts();
 				else
-					InitSoundFontSynth();
+					//InitSoundFontSynth();
+					if (0) {}
 
 				if (m_pSoundFontSynth)
 					LCDLog(TLCDLogType::Notice, "%d SoundFonts avail", m_pSoundFontSynth->GetSoundFontManager().GetSoundFontCount());
@@ -1074,6 +1075,8 @@ void CMT32Pi::ProcessEventQueue()
 					m_pMT32Synth->AllSoundOff();
 				if (m_pSoundFontSynth)
 					m_pSoundFontSynth->AllSoundOff();
+				if (m_pSC55Synth)
+					m_pSC55Synth->AllSoundOff();
 				break;
 
 			case TEventType::DisplayImage:
@@ -1103,14 +1106,16 @@ void CMT32Pi::ProcessButtonEvent(const TButtonEvent& Event)
 		// Swap synths
 		if (m_pCurrentSynth == m_pMT32Synth)
 			SwitchSynth(TSynth::SoundFont);
-		else
+		else if (m_pCurrentSynth == m_pSoundFontSynth)
+			SwitchSynth(TSynth::MT32);
+		else if (m_pCurrentSynth == m_pSC55Synth)
 			SwitchSynth(TSynth::MT32);
 	}
 	else if (Event.Button == TButton::Button2 && !Event.bRepeat)
 	{
 		if (m_pCurrentSynth == m_pMT32Synth)
 			NextMT32ROMSet();
-		else
+		else if (m_pCurrentSynth == m_pSoundFontSynth)
 		{
 			// Next SoundFont
 			const size_t nSoundFonts = m_pSoundFontSynth->GetSoundFontManager().GetSoundFontCount();
@@ -1135,6 +1140,9 @@ void CMT32Pi::ProcessButtonEvent(const TButtonEvent& Event)
 				DeferSwitchSoundFont(nNextSoundFont);
 			}
 		}
+		else if (m_pCurrentSynth == m_pSC55Synth)
+		{
+		}
 	}
 	else if (Event.Button == TButton::Button3)
 	{
@@ -1153,7 +1161,8 @@ void CMT32Pi::SwitchSynth(TSynth NewSynth)
 	if (NewSynth == TSynth::MT32)
 		pNewSynth = m_pMT32Synth;
 	else if (NewSynth == TSynth::SoundFont)
-		pNewSynth = m_pSoundFontSynth;
+		//pNewSynth = m_pSoundFontSynth;
+		pNewSynth = m_pSC55Synth;
 
 	if (pNewSynth == nullptr)
 	{
@@ -1169,7 +1178,8 @@ void CMT32Pi::SwitchSynth(TSynth NewSynth)
 
 	m_pCurrentSynth->AllSoundOff();
 	m_pCurrentSynth = pNewSynth;
-	const char* pMode = NewSynth == TSynth::MT32 ? "MT-32 mode" : "SoundFont mode";
+	//const char* pMode = NewSynth == TSynth::MT32 ? "MT-32 mode" : "SoundFont mode";
+	const char* pMode = NewSynth == TSynth::MT32 ? "MT-32 mode" : "SC-55 mode";
 	LOGNOTE("Switching to %s", pMode);
 	LCDLog(TLCDLogType::Notice, pMode);
 }
@@ -1231,8 +1241,10 @@ void CMT32Pi::SetMasterVolume(s32 nVolume)
 		m_pMT32Synth->SetMasterVolume(m_nMasterVolume);
 	if (m_pSoundFontSynth)
 		m_pSoundFontSynth->SetMasterVolume(m_nMasterVolume);
+	if (m_pSC55Synth)
+		m_pSC55Synth->SetMasterVolume(m_nMasterVolume);
 
-	if (m_pCurrentSynth == m_pSoundFontSynth)
+	if (m_pCurrentSynth == m_pSoundFontSynth || m_pCurrentSynth == m_pSC55Synth)
 		LCDLog(TLCDLogType::Notice, "Volume: %d", m_nMasterVolume);
 }
 
