@@ -63,6 +63,9 @@ endif
 # Enable PWM audio output on GPIO 12/13 for the Pi Zero 2 W
 	@echo "DEFINE += -DUSE_PWM_AUDIO_ON_ZERO" >> $(CIRCLE_CONFIG)
 
+# Make Kernel size larger
+	@echo "DEFINE += -DKERNEL_MAX_SIZE='(8 * MEGABYTE)'" >> $(CIRCLE_CONFIG)
+
 #
 # Build circle-stdlib
 #
