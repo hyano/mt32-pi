@@ -66,6 +66,9 @@ endif
 # Make Kernel size larger
 	@echo "DEFINE += -DKERNEL_MAX_SIZE='(8 * MEGABYTE)'" >> $(CIRCLE_CONFIG)
 
+# Save VFP registers on irq
+	@echo "DEFINE += -DSAVE_VFP_REGS_ON_IRQ" >> $(CIRCLE_CONFIG)
+
 #
 # Build circle-stdlib
 #
