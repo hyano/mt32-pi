@@ -270,6 +270,11 @@ bool CMT32Pi::Initialize(bool bSerialMIDIAvailable)
 		m_pControl = nullptr;
 	}
 
+	if (m_pConfig->MIDIDelay)
+	{
+		m_MIDIDelayQueue.Initialize();
+	}
+
 	LCDLog(TLCDLogType::Startup, "Init mt32emu");
 	InitMT32Synth();
 

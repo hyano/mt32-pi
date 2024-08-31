@@ -32,11 +32,33 @@ class CDelayQueue
 {
 public:
     CDelayQueue()
-        : m_rp(0), m_wp(0)
+        : m_initialized(false), m_rp(0), m_wp(0), m_timestamp(nullptr), m_queue(nullptr)
 	{
 	}
 
-	~CDelayQueue() {}
+	~CDelayQueue() {
+        delete[] m_timestamp;
+        delete[] m_queue;
+    }
+
+    bool Initialize(void)
+    {
+        if (m_initialized) return true;
+
+        m_timestamp = new u32[N];
+        m_queue = new T[N];
+
+        if (m_timestamp == nullptr || m_queue == nullptr)
+        {
+            delete[] m_timestamp;
+            delete[] m_queue;
+            return false;
+        }
+
+        m_initialized = true;
+
+        return true;
+    }
 
 	void Reset()
 	{
@@ -51,6 +73,9 @@ public:
 
     uint32_t Peek(void)
     {
+        if (!m_initialized)
+            return UINT32_MAX;
+
         if (m_rp == m_wp)
         {
             return UINT32_MAX;
@@ -63,6 +88,9 @@ public:
 
     T Dequeue(void)
     {
+        if (!m_initialized)
+            return 0;
+
         if (m_rp != m_wp)
         {
             T ret = m_queue[m_rp];
@@ -77,17 +105,22 @@ public:
 
     void Enqueue(uint32_t t, T v)
     {
+        if (!m_initialized)
+            return;
+
         m_timestamp[m_wp] = t;
         m_queue[m_wp] = v;
         m_wp = (m_wp + 1) % N;
     }
 
 private:
+    bool m_initialized;
+
     u32 m_rp;
     u32 m_wp;
 
-	u32 m_timestamp[N];
-    T m_queue[N];
+	u32 *m_timestamp;
+    T *m_queue;
 };
 
 #endif
