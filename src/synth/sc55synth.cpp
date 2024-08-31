@@ -36,6 +36,18 @@ const char ROMDirectory[] = "sc55_roms";
 
 static const int ROM_SET_N_FILES = 6;
 
+const char* rs_name[ROM_SET_COUNT] = {
+    "SC-55mk2",
+    "SC-55st",
+    "SC-55mk1",
+    "CM-300/SCC-1",
+    "JV-880",
+    "SCB-55",
+    "RLP-3237",
+    "SC-155",
+    "SC-155mk2"
+};
+
 static const char* roms[ROM_SET_COUNT][ROM_SET_N_FILES] =
 {
     "rom1.bin",
@@ -186,6 +198,15 @@ bool CSC55Synth::Initialize()
 
 	if (good)
 	{
+		LOGDBG("ROM Set: %d: %s", romimage.romset, rs_name[romimage.romset]);
+		for (int i = 0; i < ROM_SET_N_FILES; i++)
+		{
+			if (romimage.image[i].data != NULL)
+			{
+				LOGDBG("  ROM[%d]: %08x: %s", i, romimage.image[i].size, roms[romimage.romset][i]);
+			}
+		}
+
 		SC55_Open(&romimage);
 	}
 
