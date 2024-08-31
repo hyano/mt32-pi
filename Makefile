@@ -69,6 +69,9 @@ endif
 # Save VFP registers on irq
 	@echo "DEFINE += -DSAVE_VFP_REGS_ON_IRQ" >> $(CIRCLE_CONFIG)
 
+# Optimize for speed
+	@echo "OPTIMIZE = -Ofast" >> $(CIRCLE_CONFIG)
+
 #
 # Build circle-stdlib
 #
