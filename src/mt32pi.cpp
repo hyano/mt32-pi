@@ -20,6 +20,7 @@
 // mt32-pi. If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <circle/bcmwatchdog.h>
 #include <circle/memory.h>
 #include <circle/serial.h>
 #include <circle/sound/hdmisoundbasedevice.h>
@@ -1128,11 +1129,13 @@ void CMT32Pi::ProcessEventQueue()
 
 void CMT32Pi::ProcessButtonEvent(const TButtonEvent& Event)
 {
+#if 0
 	if (Event.Button == TButton::EncoderButton)
 	{
 		LCDLog(TLCDLogType::Notice, "Enc. button %s", Event.bPressed ? "PRESSED" : "RELEASED");
 		return;
 	}
+#endif
 
 	if (!Event.bPressed)
 		return;
@@ -1187,6 +1190,11 @@ void CMT32Pi::ProcessButtonEvent(const TButtonEvent& Event)
 	else if (Event.Button == TButton::Button4)
 	{
 		SetMasterVolume(m_nMasterVolume + 1);
+	}
+	else if (Event.Button == TButton::EncoderButton)
+	{
+		CBcmWatchdog *wd = new CBcmWatchdog();
+		wd->Restart();
 	}
 }
 
